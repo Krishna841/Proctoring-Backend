@@ -1,0 +1,56 @@
+## Proctoring Backend (FastAPI + MongoDB)
+
+### Setup
+
+1. Install and start MongoDB locally or use MongoDB Atlas
+2. Create and activate a virtual environment (recommended)
+
+```bash
+python -m venv .venv
+. .venv/Scripts/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
+```
+
+3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Set MongoDB URL (optional, defaults to localhost)
+
+```bash
+set MONGODB_URL=mongodb://localhost:27017  # Windows
+# or
+export MONGODB_URL=mongodb://localhost:27017  # Linux/Mac
+```
+
+### Run the server
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### API overview
+
+- POST `/sessions` { candidate_name } → create a session
+- GET `/sessions` → list sessions
+- GET `/sessions/{id}` → session + events
+- POST `/sessions/{id}/events` { event_type, message?, timestamp? } → log event
+- POST `/sessions/{id}/end` → end session
+- POST `/sessions/{id}/video` (multipart file) → upload video file
+- GET `/sessions/{id}/report` → JSON report; HTML saved under `data/reports`
+
+Static mounts:
+
+- Videos under `/videos/*` (served from `data/videos`)
+- Reports under `/reports/*` (served from `data/reports`)
+
+### Event types (suggested)
+
+- focus_lost, looking_away, no_face, multiple_faces, phone_detected, notes_detected, device_detected
+
+### Notes
+
+- Uses MongoDB database named "proctoring" with collections "sessions" and "events"
+- Integrity score is computed as 100 minus weighted event counts
+- All endpoints are now async for better performance with MongoDB
