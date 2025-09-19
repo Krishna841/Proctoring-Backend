@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+import csv
 
 from .models import Event, Session
 
@@ -89,4 +90,111 @@ def write_html_report(session: Session, counts: Dict[str, int], integrity_score:
     """
     file_path.write_text(html, encoding="utf-8")
     return file_path
+
+
+def write_csv_report(session: Session, counts: Dict[str, int], integrity_score: int, output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    file_path = output_dir / f"report_{session.id}.csv"
+    duration_seconds = 0
+    if session.end_time and session.start_time:
+        duration_seconds = int((session.end_time - session.start_time).total_seconds())
+
+    with file_path.open("w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        # Header section
+        writer.writerow(["candidate_name", session.candidate_name])
+        writer.writerow(["session_id", session.id])
+        writer.writerow(["start_time", session.start_time.isoformat() if session.start_time else ""])
+        writer.writerow(["end_time", session.end_time.isoformat() if session.end_time else ""])
+        writer.writerow(["duration_seconds", duration_seconds])
+        writer.writerow(["integrity_score", integrity_score])
+        writer.writerow([])
+        # Event summary table
+        writer.writerow(["metric", "count"])
+        writer.writerow(["focus_lost_count", counts.get("focus_lost", 0)])
+        writer.writerow(["looking_away_count", counts.get("looking_away", 0)])
+        writer.writerow(["no_face_segments", counts.get("no_face", 0)])
+        writer.writerow(["multiple_faces_count", counts.get("multiple_faces", 0)])
+        writer.writerow(["phone_detected_count", counts.get("phone_detected", 0)])
+        writer.writerow(["notes_detected_count", counts.get("notes_detected", 0)])
+        writer.writerow(["device_detected_count", counts.get("device_detected", 0)])
+
+    return file_path
+
+
+def build_html_report_content(session: Session, counts: Dict[str, int], integrity_score: int) -> str:
+    duration_seconds = 0
+    if session.end_time and session.start_time:
+        duration_seconds = int((session.end_time - session.start_time).total_seconds())
+    html = f"""
+    <!doctype html>
+    <html>
+    <head>
+        <meta charset='utf-8' />
+        <title>Proctoring Report</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 24px; }}
+            h1 {{ margin-top: 0; }}
+            .grid {{ display: grid; grid-template-columns: 240px 1fr; gap: 8px 16px; }}
+            .card {{ border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px; }}
+        </style>
+    </head>
+    <body>
+        <h1>Proctoring Report</h1>
+        <div class='grid'>
+            <div><strong>Candidate Name</strong></div><div>{session.candidate_name}</div>
+            <div><strong>Session ID</strong></div><div>{session.id}</div>
+            <div><strong>Start Time</strong></div><div>{session.start_time}</div>
+            <div><strong>End Time</strong></div><div>{session.end_time or ''}</div>
+            <div><strong>Duration (s)</strong></div><div>{duration_seconds}</div>
+            <div><strong>Integrity Score</strong></div><div>{integrity_score}</div>
+        </div>
+
+        <div class='card'>
+            <h3>Event Summary</h3>
+            <ul>
+                <li>Focus lost: {counts.get('focus_lost', 0)}</li>
+                <li>Looking away: {counts.get('looking_away', 0)}</li>
+                <li>No face: {counts.get('no_face', 0)}</li>
+                <li>Multiple faces: {counts.get('multiple_faces', 0)}</li>
+                <li>Phone detected: {counts.get('phone_detected', 0)}</li>
+                <li>Notes detected: {counts.get('notes_detected', 0)}</li>
+                <li>Extra device detected: {counts.get('device_detected', 0)}</li>
+            </ul>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+def build_csv_report_content(session: Session, counts: Dict[str, int], integrity_score: int) -> str:
+    # Build CSV in-memory
+    rows = []
+    duration_seconds = 0
+    if session.end_time and session.start_time:
+        duration_seconds = int((session.end_time - session.start_time).total_seconds())
+    rows.append(["candidate_name", session.candidate_name])
+    rows.append(["session_id", session.id])
+    rows.append(["start_time", session.start_time.isoformat() if session.start_time else ""])
+    rows.append(["end_time", session.end_time.isoformat() if session.end_time else ""])
+    rows.append(["duration_seconds", duration_seconds])
+    rows.append(["integrity_score", integrity_score])
+    rows.append([])
+    rows.append(["metric", "count"])
+    rows.append(["focus_lost_count", counts.get("focus_lost", 0)])
+    rows.append(["looking_away_count", counts.get("looking_away", 0)])
+    rows.append(["no_face_segments", counts.get("no_face", 0)])
+    rows.append(["multiple_faces_count", counts.get("multiple_faces", 0)])
+    rows.append(["phone_detected_count", counts.get("phone_detected", 0)])
+    rows.append(["notes_detected_count", counts.get("notes_detected", 0)])
+    rows.append(["device_detected_count", counts.get("device_detected", 0)])
+
+    from io import StringIO
+    buf = StringIO()
+    writer = csv.writer(buf, lineterminator='\n')
+    for r in rows:
+        writer.writerow(r)
+    return buf.getvalue()
+
 

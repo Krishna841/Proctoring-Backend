@@ -23,6 +23,10 @@ class LogEventRequest(BaseModel):
     message: Optional[str] = None
     timestamp: Optional[datetime] = None
 
+
+class ImportVideoRequest(BaseModel):
+    filename: str
+
 class SessionWithEventsResponse(BaseModel):
     id: str
     candidate_name: str

@@ -1,0 +1,15 @@
+v: 0
+micros:
+  - name: proctoring-backend
+    src: .
+    engine: python3.10
+    primary: true
+    commands:
+      - pip install -r requirements.txt
+      - uvicorn app.main:app --host 0.0.0.0 --port 8000
+    public: true
+    env:
+      - name: MONGODB_URL
+        value: ${MONGODB_URL}
+      - name: STORAGE_BACKEND
+        value: deta

@@ -10,7 +10,6 @@ load_dotenv()
 # MongoDB connection
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = "Proctoring-Backend"
-print("MONGODB_URL:", MONGODB_URL)  # Debugging line to check if the URL is loaded correctly
 
 # Async client for FastAPI
 client = AsyncIOMotorClient(MONGODB_URL)
